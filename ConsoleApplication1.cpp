@@ -1,248 +1,144 @@
+﻿#include <iostream>
+#define CONST_BLOCKS 10
+#define CONST_BLOCKSIZE 1024 * 1024
+#define CONST_MAXSIZE 10 * 1024 * 1024
 
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <vector>
-using namespace std;
-
-class User {
-public:
-    string id;
-    string name;
-    string phone;
-    string salary;
-    string profession;
-    User() {}
-    User(string id, string name, string phone, string salary, string profession) {
-        this->id = id;
-        this->name = name;
-        this->phone = phone;
-        this->salary = salary;
-        this->profession = profession;
-    }
-    void print(ofstream& out) {
-        out << this->id << "," << this->name << "," << this->phone << "," << this->salary << "," << this->profession << endl;
-    }
-    void print() {
-        cout << this->id << ", " << this->name << ", " << this->phone << ", " << this->salary << ", " << this->profession << endl;
+struct Object {
+    Object() {}
+    int index;
+    int maxSize = CONST_BLOCKSIZE;
+    int allocatedSize;
+    char* allocated;
+    bool isFree = true;
+    int Index;
+    Object(int size, int Index) {
+        allocatedSize = size;
+        isFree = false;
+        this->Index = Index;
+        allocated = new char[allocatedSize];
     }
 };
 
-class UsersDB {
-public:
-    UsersDB(string path) {
-        this->path = path;
-        initDB();
-    }
-    void add(User user) {
-        DB.push_back(user);
-        dumbDB();
-    }
-    void print() {
-        for (auto user : DB) {
-            user.print();
-        }
-    }
-    void Delete(string id) {
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].id == id) {
-                DB.erase(DB.begin() + i);
-                break;
-            }
-        }
-        dumbDB();
-    }
-    void search_id() {
-        string s_id;
-        cin >> s_id;
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].id == s_id) {
-                DB[i].print();
-                break;
-            }
-        }
-    }
-    void search_name() {
-        string s_name;
-        cin >> s_name;
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].name == s_name) {
-                DB[i].print();
-                break;
-            }
-        }
-    }
-    void search_phone() {
-        string s_phone;
-        cin >> s_phone;
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].phone == s_phone) {
-                DB[i].print();
-                break;
-            }
-        }
-    }
-    void search_salary() {
-        string s_salary;
-        cin >> s_salary;
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].salary == s_salary) {
-                DB[i].print();
-                break;
-            }
-        }
-    }
-    void search_profession() {
-        string s_profession;
-        cin >> s_profession;
-        for (int i = 0; i < DB.size(); i++) {
-            if (DB[i].profession == s_profession) {
-                DB[i].print();
-                break;
-            }
-        }
-    }
-private:
-    void initDB() {
-        ifstream in;
-        in.open(path);
-        if (in.is_open())
-        {
-            string line;
-            while (getline(in, line))
-            {
-                string id;
-                int guga = 1;
-                char h = ',';
-                string name;
-                string phone;
-                string salary;
-                string profession;
-                for (int i = 0; i < line.size(); i++) {
-                    if (line[i] == h) {
-                        guga += 1;
-                        continue;
-                    }
-                    if (guga == 1) {
-                        id = id + line[i];
-                    }
-                    if (guga == 2) {
-                        name = name + line[i];
-                    }
-                    if (guga == 3) {
-                        phone = phone + line[i];
-                    }
-                    if (guga == 4) {
-                        salary = salary + line[i];
-                    }
-                    if (guga == 5) {
-                        profession = profession + line[i];
-                    }
-                }
-                //if (sscanf_s(line.c_str(), "%d, %s, %s, %s, %s", &id, name, 256, phone, 256, salary, 256, profession, 256) == 5) {
-                User user(id, name, phone, salary, profession);
-                DB.push_back(user);
-            }
-        }
-        in.close();
-    }
-    void dumbDB() {
-        ofstream out;
-        out.open(path);
-        if (out.is_open()) {
-            for (auto user : DB) {
-                user.print(out);
-            }
-        }
-        out.close();
-    }
-    vector<User> DB;
-    string path;
-};
-void AddUser(UsersDB& db) {
-    cout << "add id:" << endl;
-    string id;
-    cin >> id;
-    cout << "add name:" << endl;
-    string name;
-    cin >> name;
-    cout << "add phone:" << endl;
-    string phone;
-    cin >> phone;
-    cout << "add salary:" << endl;
-    string salary;
-    cin >> salary;
-    cout << "add profession:" << endl;
-    string profession;
-    cin >> profession;
-    User uswe(id, name, phone, salary, profession);
-    db.add(uswe);
-}
+class Stack {
 
-int main()
-{
-    string path = "MyFile.txt";
-    UsersDB db(path);
-    bool i = true;
-    while (i)
+public:
+    Object* array;
+    int index = 1;
+    int top;
+    int CountBlocks = 0;
+    int capacity = CONST_BLOCKSIZE;
+
+    Stack(int size = CONST_BLOCKS) {
+        array = new Object[size]();
+        top = 0;
+    }
+
+    void push(int allocatedSize)
     {
-        cout << "1. add" << endl;
-        cout << "2. print" << endl;
-        cout << "3. search" << endl;
-        cout << "4. delete" << endl;
-        cout << "5. exit" << endl;
-        int screen;
-        cin >> screen;
-        switch (screen)
+        CountBlocks = allocatedSize / capacity;
+
+        if (allocatedSize % CONST_BLOCKSIZE == 0)
         {
-            case 1:
-                AddUser(db);
-                break;
-            case 2:
-                db.print();
-                break;
-            case 3:
-                cout << "1. search for id" << endl;
-                cout << "2. search for name" << endl;
-                cout << "3. search for phone" << endl;
-                cout << "4. searsh for salary" << endl;
-                cout << "5. search for profession" << endl;
-                int three;
-                cin >> three;
-                switch (three)
+            for (int i = 0; i < CountBlocks; i++)
+            {
+                if (top < CONST_BLOCKS)
                 {
-                    case 1:
-                        cout << "insert id" << endl;
-                        db.search_id();
-                        break;
-                    case 2:
-                        cout << "insert name" << endl;
-                        db.search_name();
-                        break;
-                    case 3:
-                        cout << "insert phone" << endl;
-                        db.search_phone();
-                        break;
-                    case 4:
-                        cout << "insert salary" << endl;
-                        db.search_salary();
-                        break;
-                    case 5:
-                        cout << "insert profession" << endl;
-                        db.search_profession();
-                        break;
+                    array[top++] = Object(CONST_BLOCKSIZE, index);
                 }
-                break;
-            case 4: {
-                cout << "cout id" << endl;
-                string idUser;
-                cin >> idUser;
-                db.Delete(idUser);
-                break;}
-            case 5:
-                i = 0;
-                break;
+                else {
+                    std::cout << "error! memory is full" << std::endl;
+                }
+            }
+            index += 1;
+        }
+        else
+        {
+            std::cout << "error! push%1024^2please" << std::endl;
         }
     }
 
+    void print()
+    {
+        for (int i = 0; i < CONST_BLOCKS; i++) {
+            std::cout << i << ". "
+                << array[i].Index << " box"
+                << " --- memory " << array[i].allocatedSize
+                << " --- freedom " << array[i].isFree << std::endl;
+        }
+    }
+
+    void deleteBlock(int idBox) {
+        for (int i = 0; i < top; i++) {
+            if (idBox == array[i].Index) {
+                array[i].Index = 0;
+                array[i].allocatedSize = 0;
+                array[i].isFree = true;
+                delete array[i].allocated;
+            }
+        }
+    }
+
+    void defrag()
+    {
+        for (int i = 0; i < top - 1; i++)
+        {
+            if (array[i].isFree)
+            {
+                for (int j = i + 1; j < top; j++)
+                {
+                    std::swap(array[i], array[j]);
+                }
+            }
+        }
+    }
+    void unification(int a, int b, int c)
+    {
+        for (int i = 0; i < top; i++) {
+            if (a == array[i].Index) {
+                array[i].Index = c;
+            }
+            if (b == array[i].Index) {
+                array[i].Index = c;
+            }
+        }
+    }
+};
+
+int main() {
+
+    std::string a = "0";
+    int x; int y; int z;
+    Stack* stack = new Stack();
+    while (a != "exit")
+    {
+        std::cout << "Tearlist commands" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "<><><><><><><><><><><><><><><><>" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "push - int(x) by (x * 1024^2)" << std::endl;
+        std::cout << "print" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "deleteBlock - int(x) by x Block" << std::endl;
+        std::cout << "unification - int(x, y, z) by (x box + y box = z box) << std::endl";
+        std::cout << "" << std::endl;
+        std::cout << "defrag" << std::endl;
+        std::cout << "<><><><><><><><><><><><><><><><>" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "input command:" << std::endl;
+        std::cin >> a;
+
+        if (a == "push") { system("cls"); std::cout << "int x Mb" << std::endl; std::cin >> x; stack->push(x * 1024 * 1024); }
+        if (a == "print") { system("cls"); stack->print(); }
+        if (a == "deleteBlock") { system("cls"); std::cout << "int x Block" << std::endl; std::cin >> x; stack->deleteBlock(x); }
+        if (a == "unification")
+        {
+            system("cls");
+            std::cout << "int(x, y, z) by (x box + y box = z box)" << std::endl;
+            std::cout << "int x" << std::endl; std::cin >> x;
+            std::cout << "int y" << std::endl; std::cin >> y;
+            std::cout << "int z" << std::endl; std::cin >> z;
+            stack->unification(x, y, z);
+        }
+        if (a == "defrag") { system("cls"); stack->defrag(); }
+    }
 }
